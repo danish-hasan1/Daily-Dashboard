@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hiring Progress</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1b1f27;--mute:#6b7280;--line:#e4e7ec;--acc:#2563eb;--up:#15803d;--down:#b91c1c;--closed:#0f766e;--chip:#eef2f7}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1218;--card:#181c24;--ink:#e8ebf0;--mute:#9aa3b2;--line:#2a303b;--acc:#6ea0ff;--up:#4ade80;--down:#f87171;--closed:#2dd4bf;--chip:#232936}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--line);background:var(--card)}
+h1{font-size:18px;margin:0}h2{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
+.sub{color:var(--mute);font-size:12px}
+.layout{display:grid;grid-template-columns:1fr 320px;gap:16px;padding:16px 24px;max-width:1400px;margin:auto}
+@media(max-width:900px){.layout{grid-template-columns:1fr;padding:12px 16px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi b{font-size:28px;display:block;line-height:1.1}.kpi span{color:var(--mute);font-size:12px}
+.d{font-size:12px;font-weight:600;margin-left:6px}.d.up{color:var(--up)}.d.down{color:var(--down)}.d.flat{color:var(--mute)}
+button,select,input,textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}button.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+.role{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 4px;border-top:1px solid var(--line);cursor:pointer}
+.role:first-of-type{border-top:0}.role:hover{background:var(--chip)}
+.role .t{font-weight:600}.role .m{color:var(--mute);font-size:12px}.role .n{grid-column:1/-1;font-size:13px}
+.chip{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--chip);font-size:12px;white-space:nowrap}
+.chip.chg{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc);font-weight:600}
+.chip.new{background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up);font-weight:600}
+.chip.cl{background:color-mix(in srgb,var(--closed) 18%,transparent);color:var(--closed);font-weight:600}
+.cl-item{display:block!important;padding:10px 4px}.cl-item b{font-size:15px}.legacy{opacity:.85}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);width:min(480px,92vw)}
+dialog label{display:block;margin:8px 0 2px;font-size:12px;color:var(--mute)}dialog input,dialog select,dialog textarea{width:100%}
+.row{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+</style></head><body>
+<header><div><h1>Hiring Progress</h1><div class="sub" id="cmp"></div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><select id="day"></select><button id="newday">+ Start today</button><button class="p" id="add">+ Add role</button></div></header>
+<div class="layout"><main>
+<div class="kpis" id="kpis"></div>
+<div class="card"><h2>Active requisitions</h2><div id="active"></div></div>
+<div class="card"><h2>Daily trend</h2><div id="trend"></div></div>
+<div class="card legacy"><h2>Older requisitions (not latest)</h2><div id="legacy"></div></div>
+</main>
+<aside><div class="card" style="position:sticky;top:12px"><h2>Closed · <span id="ccount"></span></h2><div id="closed"></div></div></aside></div>
+<dialog id="dlg"><form method="dialog" id="f"><h2 id="dt">Role</h2>
+<label>Title</label><input name="title" required><label>Client</label><input name="client"><label>Program</label><input name="program">
+<label>Stage</label><select name="stage"></select><label>Candidate</label><input name="candidate">
+<label>L1 shortlisted</label><input name="l1" type="number" min="0"><label>Note</label><textarea name="note" rows="2"></textarea>
+<label><input type="checkbox" name="stale" style="width:auto"> Older requisition (show at bottom)</label>
+<div class="row"><button type="button" id="del">Delete</button><button type="button" id="cancel">Cancel</button><button class="p" value="ok">Save</button></div></form></dialog>
+<script>
+const STAGES=["Open","L1 Shortlisted","L2 Scheduling","Rate discussion","Finalized","Joined"];
+const CLOSED=new Set(["Rate discussion","Finalized","Joined"]);
+const $=s=>document.querySelector(s);let ALL={},date,editing=null;
+const isClosed=r=>CLOSED.has(r.stage),si=r=>STAGES.indexOf(r.stage);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const fmt=d=>new Date(d+"T12:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+const EMBED={"2026-11-13": [{"id": "inf", "title": "Informatica PowerCenter Migration Architect / Lead", "client": "Sallie Mae", "program": "Informatica", "stage": "Rate discussion", "candidate": "Chiranjeevi", "l1": 0, "note": "Rate discussion with HR", "stale": false}, {"id": "snow", "title": "Snowflake Integration Engineer / Senior Engineer (Openflow, dbt & Native Snowflake)", "client": "Sallie Mae", "program": "Informatica", "stage": "L1 Shortlisted", "candidate": "", "l1": 1, "note": "One L2 select rejected by HR on articulation (Fri). 1 new L1 select on Friday", "stale": false}, {"id": "mule", "title": "MuleSoft Integration Architect / Senior Developer", "client": "Sallie Mae", "program": "Informatica", "stage": "Finalized", "candidate": "Ankit", "l1": 0, "note": "", "stale": false}, {"id": "pm", "title": "Project Manager / PO-Infra", "client": "Mizuho", "program": "MCP-Bruce", "stage": "L1 Shortlisted", "candidate": "Noriel", "l1": 1, "note": "Noriel L1 selected by Muso; L2 with Usha to be scheduled Monday", "stale": false}, {"id": "tal", "title": "Technical Architect Lead", "client": "Mizuho", "program": "MCP-Bruce", "stage": "Finalized", "candidate": "Shreyas", "l1": 0, "note": "", "stale": false}, {"id": "azure", "title": "Azure DevOps Engineer", "client": "Mizuho", "program": "MCP-Bruce", "stage": "Open", "candidate": "", "l1": 0, "note": "", "stale": false}, {"id": "eng", "title": "Engagement Lead / PM", "client": "Sallie Mae", "program": "Informatica", "stage": "Finalized", "candidate": "Alex", "l1": 0, "note": "", "stale": false}, {"id": "engtk", "title": "Engagement Lead - Tokyo", "client": "", "program": "", "stage": "L1 Shortlisted", "candidate": "Prashant Burman", "l1": 1, "note": "Prashant Burman L1 select; L2 tomorrow", "stale": false}, {"id": "alation", "title": "Data Governance Alation Analyst (Staff Aug)", "client": "Sallie Mae", "program": "Staff Aug", "stage": "Joined", "candidate": "Arvind", "l1": 0, "note": "", "stale": false}, {"id": "snowsql", "title": "Data Analyst Snowflake SQL (Staff Aug)", "client": "Sallie Mae", "program": "Staff Aug", "stage": "Joined", "candidate": "Bharath", "l1": 0, "note": "", "stale": false}, {"id": "sai", "title": "Senior AI Engineer", "client": "Mizuho", "program": "MCP-Bruce", "stage": "L1 Shortlisted", "candidate": "", "l1": 3, "note": "3 L1 shortlisted, L2 TBS", "stale": true}, {"id": "be", "title": "Backend Python Engineer", "client": "Mizuho", "program": "MCP-Bruce", "stage": "L1 Shortlisted", "candidate": "", "l1": 3, "note": "3 L1 shortlisted, L2 TBS", "stale": true}], "2026-11-16": [{"id": "inf", "title": "Informatica PowerCenter Migration Architect / Lead", "client": "Sallie Mae", "program": "Informatica", "stage": "Rate discussion", "candidate": "Chiranjeevi", "l1": 0, "note": "Rate discussion with HR", "stale": false}, {"id": "snow", "title": "Snowflake Integration Engineer / Senior Engineer (Openflow, dbt & Native Snowflake)", "client": "Sallie Mae", "program": "Informatica", "stage": "L2 Scheduling", "candidate": "", "l1": 1, "note": "One L2 select rejected by HR on articulation (Fri). 1 L1 select (Fri); L2 tomorrow", "stale": false}, {"id": "mule", "title": "MuleSoft Integration Architect / Senior Developer", "client": "Sallie Mae", "program": "Informatica", "stage": "Finalized", "candidate": "Ankit", "l1": 0, "note": "", "stale": false}, {"id": "pm", "title": "Project Manager / PO-Infra", "client": "Mizuho", "program": "MCP-Bruce", "stage": "L2 Scheduling", "candidate": "Noriel", "l1": 1, "note": "Noriel L1 selected by Muso; L2 with Usha to be scheduled Monday", "stale": false}, {"id": "tal", "title": "Technical Architect Lead", "client": "Mizuho", "program": "MCP-Bruce", "stage": "Finalized", "candidate": "Shreyas", "l1": 0, "note": "", "stale": false}, {"id": "azure", "title": "Azure DevOps Engineer", "client": "Mizuho", "program": "MCP-Bruce", "stage": "Open", "candidate": "", "l1": 0, "note": "", "stale": false}, {"id": "eng", "title": "Engagement Lead / PM", "client": "Sallie Mae", "program": "Informatica", "stage": "Finalized", "candidate": "Alex", "l1": 0, "note": "", "stale": false}, {"id": "engtk", "title": "Engagement Lead - Tokyo", "client": "", "program": "", "stage": "L1 Shortlisted", "candidate": "Prashant Burman", "l1": 1, "note": "Prashant Burman L1 select; L2 tomorrow", "stale": false}, {"id": "alation", "title": "Data Governance Alation Analyst (Staff Aug)", "client": "Sallie Mae", "program": "Staff Aug", "stage": "Joined", "candidate": "Arvind", "l1": 0, "note": "", "stale": false}, {"id": "snowsql", "title": "Data Analyst Snowflake SQL (Staff Aug)", "client": "Sallie Mae", "program": "Staff Aug", "stage": "Joined", "candidate": "Bharath", "l1": 0, "note": "", "stale": false}, {"id": "sai", "title": "Senior AI Engineer", "client": "Mizuho", "program": "MCP-Bruce", "stage": "L1 Shortlisted", "candidate": "", "l1": 3, "note": "3 L1 shortlisted, L2 TBS", "stale": true}, {"id": "be", "title": "Backend Python Engineer", "client": "Mizuho", "program": "MCP-Bruce", "stage": "L1 Shortlisted", "candidate": "", "l1": 3, "note": "3 L1 shortlisted, L2 TBS", "stale": true}]};
+async function load(){try{ALL=await (await fetch("/api/all")).json()}catch(e){ALL=JSON.parse(localStorage.getItem("hiring")||"null")||EMBED}if(!Object.keys(ALL).length)ALL=EMBED;const ds=Object.keys(ALL).sort();if(!date||!ALL[date])date=ds[ds.length-1];render()}
+function save(){try{localStorage.setItem("hiring",JSON.stringify(ALL))}catch(e){}return fetch("/api/day/"+date,{method:"PUT",body:JSON.stringify(ALL[date])}).catch(()=>{})}
+function prevDate(){return Object.keys(ALL).sort().filter(d=>d<date).pop()}
+function stats(rs){const a=rs.filter(r=>!isClosed(r));return{open:a.length,int:a.filter(r=>si(r)>=1).length,sl:rs.reduce((n,r)=>n+(+r.l1||0),0),cl:rs.filter(isClosed).length}}
+function dl(n,inv){if(!n)return'<span class="d flat">±0</span>';const good=inv?n<0:n>0;return`<span class="d ${good?'up':'down'}">${n>0?'▲':'▼'} ${Math.abs(n)}</span>`}
+function render(){
+ const ds=Object.keys(ALL).sort(),cur=ALL[date],pd=prevDate(),prev=pd?ALL[pd]:null,pm=prev?Object.fromEntries(prev.map(r=>[r.id,r])):{};
+ $("#day").innerHTML=ds.slice().reverse().map(d=>`<option value="${d}" ${d==date?"selected":""}>${fmt(d)}</option>`).join("");
+ $("#newday").style.display=ALL[today()]?"none":"";
+ $("#cmp").textContent=pd?`${fmt(date)} vs last working day (${fmt(pd)})`:`${fmt(date)} · baseline day — changes will show from the next snapshot`;
+ const s=stats(cur),p=prev?stats(prev):null;
+ const k=[["Open requisitions",s.open,p&&s.open-p.open,1],["In interview",s.int,p&&s.int-p.int],["L1 shortlisted",s.sl,p&&s.sl-p.sl],["Closed",s.cl,p&&s.cl-p.cl]];
+ $("#kpis").innerHTML=k.map(([l,v,d,inv])=>`<div class="kpi"><b>${v}${d==null?"":dl(d,inv)}</b><span>${l}</span></div>`).join("");
+ const row=r=>{const o=pm[r.id],ch=[];
+  if(prev&&!o)ch.push('<span class="chip new">New</span>');
+  else if(o){if(o.stage!==r.stage)ch.push(`<span class="chip chg">${esc(o.stage)} → ${esc(r.stage)}</span>`);
+   if((+o.l1||0)!==(+r.l1||0))ch.push(`<span class="chip chg">L1 ${o.l1||0} → ${r.l1||0}</span>`);
+   if(o.note!==r.note&&o.stage===r.stage)ch.push('<span class="chip chg">Updated</span>')}
+  return`<div class="role" data-id="${r.id}"><div><div class="t">${esc(r.title)}</div><div class="m">${[r.client,r.program].filter(Boolean).map(esc).join(" · ")||"—"}</div></div>
+  <div><span class="chip">${esc(r.stage)}</span></div><div class="n">${r.candidate?`<b>${esc(r.candidate)}</b> — `:""}${esc(r.note)} ${ch.join(" ")}</div></div>`};
+ $("#active").innerHTML=cur.filter(r=>!isClosed(r)&&!r.stale).sort((a,b)=>si(b)-si(a)).map(row).join("")||'<div class="sub">None</div>';
+ $("#legacy").innerHTML=cur.filter(r=>!isClosed(r)&&r.stale).map(row).join("")||'<div class="sub">None</div>';
+ const cl=cur.filter(isClosed);$("#ccount").textContent=cl.length;
+ $("#closed").innerHTML=cl.map(r=>{const o=pm[r.id],isNew=prev&&(!o||!isClosed(o));
+  return`<div class="cl-item role" data-id="${r.id}"><b>${esc(r.candidate||"—")}</b> <span class="chip cl">${esc(r.stage)}</span>${isNew?' <span class="chip new">New</span>':""}<div class="m">${esc(r.title)}</div><div class="m">${[r.client,r.program].filter(Boolean).map(esc).join(" · ")}</div></div>`}).join("");
+ trend(ds);
+}
+function trend(ds){const W=640,H=170,step=(W-60)/ds.length,bw=Math.min(60,step-12),mx=Math.max(1,...ds.map(d=>ALL[d].length));
+ const bars=ds.map((d,i)=>{const s=stats(ALL[d]),x=40+i*step+6,u=(H-50)/mx,ho=s.open*u,hc=s.cl*u;
+  return`<rect x="${x}" y="${H-30-hc}" width="${bw}" height="${hc}" fill="var(--closed)" rx="2"><title>${fmt(d)}: ${s.cl} closed</title></rect>
+  <rect x="${x}" y="${H-30-hc-ho}" width="${bw}" height="${ho}" fill="var(--acc)" rx="2"><title>${fmt(d)}: ${s.open} open</title></rect>
+  <text x="${x+bw/2}" y="${H-14}" text-anchor="middle" font-size="11" fill="var(--mute)">${fmt(d)}</text>
+  <text x="${x+bw/2}" y="${H-34-hc-ho}" text-anchor="middle" font-size="11" fill="var(--ink)">${s.open} open / ${s.cl} closed</text>`}).join("");
+ $("#trend").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Open vs closed per day">${bars}</svg><div class="sub"><span style="color:var(--acc)">■</span> Open &nbsp; <span style="color:var(--closed)">■</span> Closed</div>`}
+function openDlg(id){const f=$("#f");editing=id;const r=id?ALL[date].find(x=>x.id==id):{title:"",client:"",program:"",stage:"Open",candidate:"",l1:0,note:"",stale:false};
+ $("#dt").textContent=id?"Edit role":"Add role";f.stage.innerHTML=STAGES.map(s=>`<option>${s}</option>`).join("");
+ for(const k of ["title","client","program","stage","candidate","l1","note"])f[k].value=r[k]??"";f.stale.checked=!!r.stale;$("#del").style.display=id?"":"none";$("#dlg").showModal()}
+document.addEventListener("click",e=>{const r=e.target.closest(".role");if(r)openDlg(r.dataset.id)});
+$("#add").onclick=()=>openDlg(null);$("#cancel").onclick=()=>$("#dlg").close();
+$("#del").onclick=async()=>{if(!confirm("Delete this role from "+fmt(date)+"?"))return;ALL[date]=ALL[date].filter(x=>x.id!=editing);await save();$("#dlg").close();render()};
+$("#f").addEventListener("submit",async e=>{const f=e.target,v=Object.fromEntries(["title","client","program","stage","candidate","note"].map(k=>[k,f[k].value]));v.l1=+f.l1.value||0;v.stale=f.stale.checked;
+ if(editing)Object.assign(ALL[date].find(x=>x.id==editing),v);else ALL[date].push({id:"r"+Date.now(),...v});await save();render()});
+$("#day").onchange=e=>{date=e.target.value;render()};
+$("#newday").onclick=async()=>{const ds=Object.keys(ALL).sort(),t=today();ALL[t]=JSON.parse(JSON.stringify(ALL[ds[ds.length-1]]));date=t;await save();render()};
+load();
+</script></body></html>

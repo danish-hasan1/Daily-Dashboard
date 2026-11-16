@@ -1,0 +1,134 @@
+[
+ {
+  "id": "inf",
+  "title": "Informatica PowerCenter Migration Architect / Lead",
+  "client": "Sallie Mae",
+  "program": "Informatica",
+  "stage": "Rate discussion",
+  "candidate": "Chiranjeevi",
+  "l1": 0,
+  "note": "Rate discussion with HR",
+  "stale": false
+ },
+ {
+  "id": "snow",
+  "title": "Snowflake Integration Engineer / Senior Engineer (Openflow, dbt & Native Snowflake)",
+  "client": "Sallie Mae",
+  "program": "Informatica",
+  "stage": "L2 Scheduling",
+  "candidate": "",
+  "l1": 1,
+  "note": "One L2 select rejected by HR on articulation (Fri). 1 L1 select (Fri); L2 tomorrow",
+  "stale": false
+ },
+ {
+  "id": "mule",
+  "title": "MuleSoft Integration Architect / Senior Developer",
+  "client": "Sallie Mae",
+  "program": "Informatica",
+  "stage": "Finalized",
+  "candidate": "Ankit",
+  "l1": 0,
+  "note": "",
+  "stale": false
+ },
+ {
+  "id": "pm",
+  "title": "Project Manager / PO-Infra",
+  "client": "Mizuho",
+  "program": "MCP-Bruce",
+  "stage": "L2 Scheduling",
+  "candidate": "Noriel",
+  "l1": 1,
+  "note": "Noriel L1 selected by Muso; L2 with Usha to be scheduled Monday",
+  "stale": false
+ },
+ {
+  "id": "tal",
+  "title": "Technical Architect Lead",
+  "client": "Mizuho",
+  "program": "MCP-Bruce",
+  "stage": "Finalized",
+  "candidate": "Shreyas",
+  "l1": 0,
+  "note": "",
+  "stale": false
+ },
+ {
+  "id": "azure",
+  "title": "Azure DevOps Engineer",
+  "client": "Mizuho",
+  "program": "MCP-Bruce",
+  "stage": "Open",
+  "candidate": "",
+  "l1": 0,
+  "note": "",
+  "stale": false
+ },
+ {
+  "id": "eng",
+  "title": "Engagement Lead / PM",
+  "client": "Sallie Mae",
+  "program": "Informatica",
+  "stage": "Finalized",
+  "candidate": "Alex",
+  "l1": 0,
+  "note": "",
+  "stale": false
+ },
+ {
+  "id": "engtk",
+  "title": "Engagement Lead - Tokyo",
+  "client": "",
+  "program": "",
+  "stage": "L1 Shortlisted",
+  "candidate": "Prashant Burman",
+  "l1": 1,
+  "note": "Prashant Burman L1 select; L2 tomorrow",
+  "stale": false
+ },
+ {
+  "id": "alation",
+  "title": "Data Governance Alation Analyst (Staff Aug)",
+  "client": "Sallie Mae",
+  "program": "Staff Aug",
+  "stage": "Joined",
+  "candidate": "Arvind",
+  "l1": 0,
+  "note": "",
+  "stale": false
+ },
+ {
+  "id": "snowsql",
+  "title": "Data Analyst Snowflake SQL (Staff Aug)",
+  "client": "Sallie Mae",
+  "program": "Staff Aug",
+  "stage": "Joined",
+  "candidate": "Bharath",
+  "l1": 0,
+  "note": "",
+  "stale": false
+ },
+ {
+  "id": "sai",
+  "title": "Senior AI Engineer",
+  "client": "Mizuho",
+  "program": "MCP-Bruce",
+  "stage": "L1 Shortlisted",
+  "candidate": "",
+  "l1": 3,
+  "note": "3 L1 shortlisted, L2 TBS",
+  "stale": true
+ },
+ {
+  "id": "be",
+  "title": "Backend Python Engineer",
+  "client": "Mizuho",
+  "program": "MCP-Bruce",
+  "stage": "L1 Shortlisted",
+  "candidate": "",
+  "l1": 3,
+  "note": "3 L1 shortlisted, L2 TBS",
+  "stale": true
+ }
+]
